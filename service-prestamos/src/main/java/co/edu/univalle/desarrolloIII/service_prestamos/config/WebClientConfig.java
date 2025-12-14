@@ -7,7 +7,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-    private final String GATEWAY_BASE_URL = "http://localhost:8080";
+    private final String GATEWAY_BASE_URL = "http://127.0.0.1:8080";
 
     @Bean
     public WebClient webClient() {
