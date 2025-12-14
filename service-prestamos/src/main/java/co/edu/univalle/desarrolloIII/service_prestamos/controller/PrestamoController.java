@@ -6,7 +6,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Mono; // Importar Mono
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/prestamos")
@@ -30,5 +30,14 @@ public class PrestamoController {
                         .map(ResponseEntity::ok)
                         .orElse(ResponseEntity.notFound().build())
                 );
+    }
+
+    @PutMapping("/{id}/devolver")
+    public Mono<ResponseEntity<Prestamo>> devolverPrestamo(@RequestHeader("Authorization") String authHeader,
+                                                           @PathVariable Long id) {
+
+        return prestamoService.devolverPrestamo(id, authHeader)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 }
