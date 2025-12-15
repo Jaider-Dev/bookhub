@@ -37,6 +37,11 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
         return (exchange, chain) -> {
             ServerHttpRequest request = exchange.getRequest();
 
+            // 0. Permitir peticiones OPTIONS (CORS preflight)
+            if (request.getMethod().name().equals("OPTIONS")) {
+                return chain.filter(exchange);
+            }
+
             // 1. Definir Rutas Públicas (no requieren token)
             Predicate<ServerHttpRequest> isApiSecured = r ->
                     !r.getURI().getPath().contains("/usuarios/login") &&

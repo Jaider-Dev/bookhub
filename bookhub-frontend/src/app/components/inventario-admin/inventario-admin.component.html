@@ -1,0 +1,319 @@
+<div class="inventario-container">
+  <div class="header">
+    <h2>📚 Gestión de Inventario</h2>
+  </div>
+
+  <!-- Alertas -->
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+    <button (click)="clearMessages()" class="close-alert">×</button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+    <button (click)="clearMessages()" class="close-alert">×</button>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs-navigation">
+    <button 
+      [class.active]="activeTab === 'libros'"
+      (click)="selectTab('libros')"
+      class="tab-btn">
+      📖 Libros
+    </button>
+    <button 
+      [class.active]="activeTab === 'autores'"
+      (click)="selectTab('autores')"
+      class="tab-btn">
+      👤 Autores
+    </button>
+    <button 
+      [class.active]="activeTab === 'categorias'"
+      (click)="selectTab('categorias')"
+      class="tab-btn">
+      🏷️ Categorías
+    </button>
+    <button 
+      [class.active]="activeTab === 'ejemplares'"
+      (click)="selectTab('ejemplares')"
+      class="tab-btn">
+      📚 Ejemplares
+    </button>
+  </div>
+
+  <!-- LIBROS TAB -->
+  <section *ngIf="activeTab === 'libros'" class="tab-content">
+    <div class="tab-header">
+      <h3>Gestión de Libros</h3>
+      <button (click)="openFormLibro()" class="btn-primary">+ Nuevo Libro</button>
+    </div>
+
+    <div class="search-box">
+      <input 
+        type="text" 
+        placeholder="Buscar por título, autor o categoría..."
+        [(ngModel)]="searchLibros"
+        (input)="applyLibrosFilters()"
+        class="search-input">
+      <select [(ngModel)]="sortByLibros" (change)="applyLibrosFilters()" class="sort-select">
+        <option value="titulo">Ordenar por Título</option>
+        <option value="autor">Ordenar por Autor</option>
+        <option value="categoria">Ordenar por Categoría</option>
+      </select>
+    </div>
+
+    <div *ngIf="isLoading" class="loading">
+      <div class="spinner"></div>
+      <p>Cargando libros...</p>
+    </div>
+
+    <div class="table-container" *ngIf="!isLoading && librosFiltered.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Título</th>
+            <th>Autor</th>
+            <th>Categoría</th>
+            <th>Ejemplares</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let libro of librosFiltered">
+            <td>{{ libro.id }}</td>
+            <td><strong>{{ libro.titulo }}</strong></td>
+            <td>{{ libro.autor }}</td>
+            <td><span class="badge">{{ libro.categoria }}</span></td>
+            <td>{{ libro.ejemplares }}</td>
+            <td class="actions">
+              <button (click)="openFormLibro(libro)" class="btn-edit" title="Editar">✏️</button>
+              <button (click)="deleteLibro(libro.id!)" class="btn-delete" title="Eliminar">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!isLoading && librosFiltered.length === 0" class="empty-state">
+      <p>No hay libros disponibles</p>
+    </div>
+  </section>
+
+  <!-- AUTORES TAB -->
+  <section *ngIf="activeTab === 'autores'" class="tab-content">
+    <div class="tab-header">
+      <h3>Gestión de Autores</h3>
+      <button (click)="openFormAutor()" class="btn-primary">+ Nuevo Autor</button>
+    </div>
+
+    <div class="search-box">
+      <input 
+        type="text" 
+        placeholder="Buscar por nombre..."
+        [(ngModel)]="searchAutores"
+        (input)="applyAutoresFilters()"
+        class="search-input">
+    </div>
+
+    <div class="table-container" *ngIf="!isLoading && autoresFiltered.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let autor of autoresFiltered">
+            <td>{{ autor.id }}</td>
+            <td>{{ autor.nombre }}</td>
+            <td class="actions">
+              <button (click)="openFormAutor(autor)" class="btn-edit" title="Editar">✏️</button>
+              <button (click)="deleteAutor(autor.id!)" class="btn-delete" title="Eliminar">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!isLoading && autoresFiltered.length === 0" class="empty-state">
+      <p>No hay autores registrados</p>
+    </div>
+  </section>
+
+  <!-- CATEGORIAS TAB -->
+  <section *ngIf="activeTab === 'categorias'" class="tab-content">
+    <div class="tab-header">
+      <h3>Gestión de Categorías</h3>
+      <button (click)="openFormCategoria()" class="btn-primary">+ Nueva Categoría</button>
+    </div>
+
+    <div class="search-box">
+      <input 
+        type="text" 
+        placeholder="Buscar por nombre..."
+        [(ngModel)]="searchCategorias"
+        (input)="applyCategoriasFilters()"
+        class="search-input">
+    </div>
+
+    <div class="table-container" *ngIf="!isLoading && categoriasFiltered.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let categoria of categoriasFiltered">
+            <td>{{ categoria.id }}</td>
+            <td>{{ categoria.nombre }}</td>
+            <td class="actions">
+              <button (click)="openFormCategoria(categoria)" class="btn-edit" title="Editar">✏️</button>
+              <button (click)="deleteCategoria(categoria.id!)" class="btn-delete" title="Eliminar">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!isLoading && categoriasFiltered.length === 0" class="empty-state">
+      <p>No hay categorías registradas</p>
+    </div>
+  </section>
+
+  <!-- EJEMPLARES TAB -->
+  <section *ngIf="activeTab === 'ejemplares'" class="tab-content">
+    <div class="tab-header">
+      <h3>Gestión de Ejemplares</h3>
+      <button (click)="openFormEjemplar()" class="btn-primary">+ Nuevo Ejemplar</button>
+    </div>
+
+    <div class="search-box">
+      <input 
+        type="text" 
+        placeholder="Buscar por libro o estado..."
+        [(ngModel)]="searchEjemplares"
+        (input)="applyEjemplaresFilters()"
+        class="search-input">
+      <select [(ngModel)]="sortByEjemplares" (change)="applyEjemplaresFilters()" class="sort-select">
+        <option value="libroTitulo">Ordenar por Libro</option>
+        <option value="estado">Ordenar por Estado</option>
+      </select>
+    </div>
+
+    <div class="table-container" *ngIf="!isLoading && ejemplaresFiltered.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Libro</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ejemplar of ejemplaresFiltered">
+            <td>{{ ejemplar.id }}</td>
+            <td>Libro ID: {{ ejemplar.libroId }}</td>
+            <td>
+              <span [class]="ejemplar.disponible ? 'estado-disponible' : 'estado-prestado'" class="badge">
+                {{ ejemplar.disponible ? 'DISPONIBLE' : 'PRESTADO' }}
+              </span>
+            </td>
+            <td class="actions">
+              <button (click)="openFormEjemplar(ejemplar)" class="btn-edit" title="Editar">✏️</button>
+              <button (click)="deleteEjemplar(ejemplar.id!)" class="btn-delete" title="Eliminar">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!isLoading && ejemplaresFiltered.length === 0" class="empty-state">
+      <p>No hay ejemplares registrados</p>
+    </div>
+  </section>
+
+  <!-- MODAL FORM -->
+  <div *ngIf="showForm" class="modal-overlay" (click)="closeForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <span *ngIf="activeTab === 'libros'">{{ editingId ? 'Editar Libro' : 'Nuevo Libro' }}</span>
+          <span *ngIf="activeTab === 'autores'">{{ editingId ? 'Editar Autor' : 'Nuevo Autor' }}</span>
+          <span *ngIf="activeTab === 'categorias'">{{ editingId ? 'Editar Categoría' : 'Nueva Categoría' }}</span>
+          <span *ngIf="activeTab === 'ejemplares'">{{ editingId ? 'Editar Ejemplar' : 'Nuevo Ejemplar' }}</span>
+        </h3>
+        <button (click)="closeForm()" class="close-btn">×</button>
+      </div>
+
+      <form class="modal-body">
+        <!-- LIBROS FORM -->
+        <ng-container *ngIf="activeTab === 'libros'">
+          <div class="form-group">
+            <label>Título *</label>
+            <input [(ngModel)]="formLibro.titulo" name="titulo" type="text" placeholder="Ej: Don Quijote" required>
+          </div>
+          <div class="form-group">
+            <label>Autor *</label>
+            <input [(ngModel)]="formLibro.autor" name="autor" type="text" placeholder="Ej: Miguel de Cervantes" required>
+          </div>
+          <div class="form-group">
+            <label>Categoría *</label>
+            <input [(ngModel)]="formLibro.categoria" name="categoria" type="text" placeholder="Ej: Ficción" required>
+          </div>
+          <div class="form-group">
+            <label>Ejemplares</label>
+            <input [(ngModel)]="formLibro.ejemplares" name="ejemplares" type="number" min="0">
+          </div>
+        </ng-container>
+
+        <!-- AUTORES FORM -->
+        <ng-container *ngIf="activeTab === 'autores'">
+          <div class="form-group">
+            <label>Nombre *</label>
+            <input [(ngModel)]="formAutor.nombre" name="nombre" type="text" placeholder="Nombre del autor" required>
+          </div>
+        </ng-container>
+
+        <!-- CATEGORIAS FORM -->
+        <ng-container *ngIf="activeTab === 'categorias'">
+          <div class="form-group">
+            <label>Nombre *</label>
+            <input [(ngModel)]="formCategoria.nombre" name="nombre" type="text" placeholder="Nombre de la categoría" required>
+          </div>
+        </ng-container>
+
+        <!-- EJEMPLARES FORM -->
+        <ng-container *ngIf="activeTab === 'ejemplares'">
+          <div class="form-group">
+            <label>ID del Libro *</label>
+            <input [(ngModel)]="formEjemplar.libroId" name="libroId" type="number" placeholder="ID del libro" required>
+          </div>
+          <div class="form-group">
+            <label>Disponible *</label>
+            <select [(ngModel)]="formEjemplar.disponible" name="disponible" required>
+              <option [value]="true">Disponible</option>
+              <option [value]="false">Prestado</option>
+            </select>
+          </div>
+        </ng-container>
+
+        <div class="form-actions">
+          <button type="button" (click)="closeForm()" class="btn-secondary">Cancelar</button>
+          <button type="button" 
+            (click)="activeTab === 'libros' ? saveLibro() : activeTab === 'autores' ? saveAutor() : activeTab === 'categorias' ? saveCategoria() : saveEjemplar()"
+            class="btn-primary">
+            {{ editingId ? 'Actualizar' : 'Crear' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

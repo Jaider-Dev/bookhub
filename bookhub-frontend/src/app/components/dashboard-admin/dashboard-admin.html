@@ -1,0 +1,95 @@
+<div class="dashboard-container">
+  <!-- Sidebar Izquierda -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>BookHub Admin</h2>
+    </div>
+    <nav class="sidebar-nav">
+      <button (click)="selectSection('home')" 
+              [class.active]="selectedSection === 'home'"
+              class="nav-item">
+        <span>Inicio</span>
+      </button>
+      <button (click)="selectSection('usuarios')" 
+              [class.active]="selectedSection === 'usuarios'"
+              class="nav-item">
+        <span>Gestión de Usuarios</span>
+      </button>
+      <button (click)="selectSection('perfil')"
+          [class.active]="selectedSection === 'perfil'"
+          class="nav-item">
+        <span>Perfil</span>
+      </button>
+      <button (click)="selectSection('inventario')" 
+              [class.active]="selectedSection === 'inventario'"
+              class="nav-item">
+        <span>Gestión de Inventario</span>
+      </button>
+      <button (click)="selectSection('prestamos')" 
+              [class.active]="selectedSection === 'prestamos'"
+              class="nav-item">
+        <span>Gestión de Préstamos</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button (click)="logout()" class="logout-btn">
+        <span>Cerrar Sesión</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Contenido Principal -->
+  <main class="main-content">
+    <!-- Inicio -->
+    <section *ngIf="selectedSection === 'home'" class="content-section">
+      <div class="welcome-card">
+        <h1>Panel de Control</h1>
+        <p class="subtitle">Resumen general del sistema BookHub</p>
+        
+        <div class="stats-grid">
+          <div class="stat-box">
+            <h3>Usuarios Totales</h3>
+            <p class="stat-number">{{ totalUsuarios }}</p>
+            <p class="stat-label">registrados en el sistema</p>
+          </div>
+          <div class="stat-box">
+            <h3>Libros en Inventario</h3>
+            <p class="stat-number">{{ totalLibros }}</p>
+            <p class="stat-label">títulos disponibles</p>
+          </div>
+          <div class="stat-box">
+            <h3>Préstamos Activos</h3>
+            <p class="stat-number">{{ totalPrestamos }}</p>
+            <p class="stat-label">en circulación</p>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h2>Información de Sesión</h2>
+          <p><strong>Rol:</strong> {{ authService.getRoleFromToken() }}</p>
+          <p><strong>Última actividad:</strong> Ahora</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gestión de Usuarios -->
+    <section *ngIf="selectedSection === 'usuarios'" class="content-section">
+      <app-usuarios-admin></app-usuarios-admin>
+    </section>
+
+    <!-- Gestión de Inventario -->
+    <section *ngIf="selectedSection === 'inventario'" class="content-section">
+      <app-inventario-admin></app-inventario-admin>
+    </section>
+
+    <!-- Gestión de Préstamos -->
+    <section *ngIf="selectedSection === 'prestamos'" class="content-section">
+      <app-prestamos-admin></app-prestamos-admin>
+    </section>
+    
+    <!-- Perfil del Usuario -->
+    <section *ngIf="selectedSection === 'perfil'" class="content-section">
+      <app-user-profile></app-user-profile>
+    </section>
+  </main>
+</div>

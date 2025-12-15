@@ -23,6 +23,11 @@ public class EjemplarController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping
+    public java.util.List<Ejemplar> getAllEjemplares() {
+        return ejemplarService.findAll();
+    }
+
     @PostMapping
     public ResponseEntity<Ejemplar> createEjemplar(@RequestBody Ejemplar ejemplar) {
         return ResponseEntity.ok(ejemplarService.save(ejemplar));

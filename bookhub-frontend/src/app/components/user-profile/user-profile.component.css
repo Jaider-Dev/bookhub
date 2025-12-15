@@ -1,0 +1,23 @@
+.profile-container {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+}
+
+.profile-container h2 {
+  margin-top: 0;
+  color: #0066cc;
+}
+
+.profile-container label { display:block; margin-top:10px; color:#333; }
+.profile-container input { width:100%; padding:8px 10px; border-radius:6px; border:1px solid #ddd; margin-top:6px; }
+
+.error-message { background:#fee; color:#c33; padding:10px; border-left:4px solid #c33; border-radius:6px; }
+.success-message { background:#e6ffed; color:#1a7f37; padding:10px; border-left:4px solid #1a7f37; border-radius:6px; }
+
+.loading { text-align:center; padding:30px; }
+.spinner { display:inline-block; width:40px; height:40px; border:4px solid #f3f3f3; border-top:4px solid #0066cc; border-radius:50%; animation:spin 1s linear infinite; }
+@keyframes spin { 0%{transform:rotate(0deg);}100%{transform:rotate(360deg);} }
+
+.btn-primary { background: linear-gradient(135deg,#0066cc 0%,#0052a3 100%); color:white; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; }

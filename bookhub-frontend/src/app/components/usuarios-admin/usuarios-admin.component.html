@@ -1,0 +1,172 @@
+<div class="usuarios-container">
+  <div class="header">
+    <h2>Gestión de Usuarios</h2>
+    <button (click)="openForm()" class="btn-primary">+ Nuevo Usuario</button>
+  </div>
+
+  <!-- Mensajes -->
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+    <button (click)="clearMessages()" class="close-alert">×</button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+    <button (click)="clearMessages()" class="close-alert">×</button>
+  </div>
+
+  <!-- Controles de filtro -->
+  <div class="filters-section" *ngIf="!isLoading && usuarios.length > 0">
+    <div class="filter-group">
+      <input 
+        type="text" 
+        placeholder="Buscar por nombre, email o cédula..."
+        (input)="onSearch($event.target.value)"
+        class="search-input">
+    </div>
+
+    <div class="filter-group">
+      <select (change)="onFilterRoleChange($event)" class="filter-select">
+        <option value="ALL">Todos los roles</option>
+        <option value="ADMIN">Administradores</option>
+        <option value="LECTOR">Lectores</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <select (change)="onFilterActivoChange($event)" class="filter-select">
+        <option value="ALL">Todos los estados</option>
+        <option value="ACTIVO">Activos</option>
+        <option value="INACTIVO">Inactivos</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <select (change)="onSortChange($event)" class="filter-select">
+        <option value="nombre">Ordenar por Nombre</option>
+        <option value="email">Ordenar por Email</option>
+        <option value="rol">Ordenar por Rol</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>Cargando usuarios...</p>
+  </div>
+
+  <!-- Tabla de Usuarios -->
+  <div class="table-container" *ngIf="!isLoading && usuariosFiltered.length > 0">
+    <table class="usuarios-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Teléfono</th>
+          <th>Cédula</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let usuario of usuariosFiltered">
+          <td>{{ usuario.id }}</td>
+          <td>{{ usuario.nombre }}</td>
+          <td>{{ usuario.email }}</td>
+          <td>{{ usuario.telefono || '—' }}</td>
+          <td>{{ usuario.cedula || '—' }}</td>
+          <td>
+            <span [class.badge-admin]="usuario.rol === 'ADMIN'"
+                  [class.badge-lector]="usuario.rol === 'LECTOR'"
+                  class="badge">
+              {{ usuario.rol }}
+            </span>
+          </td>
+          <td>
+            <button (click)="toggleActivo(usuario)"
+                    [class.active]="usuario.activo"
+                    [class.inactive]="!usuario.activo"
+                    class="status-btn">
+              {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+            </button>
+          </td>
+          <td class="actions">
+            <button (click)="openForm(usuario)" class="btn-edit" title="Editar">✏️</button>
+            <button (click)="deleteUsuario(usuario.id!, usuario.nombre)" class="btn-delete" title="Deshabilitar">🗑️</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Sin resultados -->
+  <div *ngIf="!isLoading && usuarios.length === 0" class="empty-state">
+    <p>No hay usuarios registrados</p>
+  </div>
+
+  <div *ngIf="!isLoading && usuariosFiltered.length === 0 && usuarios.length > 0" class="empty-state">
+    <p>No hay usuarios que coincidan con los filtros</p>
+  </div>
+
+  <!-- Modal Form -->
+  <div *ngIf="showForm" class="modal-overlay" (click)="closeForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingId ? 'Editar Usuario' : 'Nuevo Usuario' }}</h3>
+        <button (click)="closeForm()" class="close-btn">×</button>
+      </div>
+
+      <form class="modal-body" (ngSubmit)="saveUsuario()">
+        <div class="form-group">
+          <label>Nombre *</label>
+          <input [(ngModel)]="formData.nombre" name="nombre" required placeholder="Nombre completo">
+        </div>
+
+        <div class="form-group">
+          <label>Email *</label>
+          <input [(ngModel)]="formData.email" name="email" type="email" required placeholder="correo@ejemplo.com">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input [(ngModel)]="formData.telefono" name="telefono" placeholder="3001234567">
+          </div>
+
+          <div class="form-group">
+            <label>Cédula</label>
+            <input [(ngModel)]="formData.cedula" name="cedula" placeholder="123456789">
+          </div>
+        </div>
+
+        <div *ngIf="!editingId" class="form-group">
+          <label>Contraseña *</label>
+          <input [(ngModel)]="formData.password" name="password" type="password" required placeholder="Contraseña inicial">
+        </div>
+
+        <div class="form-group">
+          <label>Rol *</label>
+          <select [(ngModel)]="formData.rol" name="rol">
+            <option value="LECTOR">Lector</option>
+            <option value="ADMIN">Administrador</option>
+          </select>
+        </div>
+
+        <div class="form-group checkbox">
+          <label>
+            <input [(ngModel)]="formData.activo" name="activo" type="checkbox">
+            Usuario Activo
+          </label>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" (click)="closeForm()" class="btn-secondary">Cancelar</button>
+          <button type="submit" class="btn-primary">{{ editingId ? 'Actualizar' : 'Crear' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

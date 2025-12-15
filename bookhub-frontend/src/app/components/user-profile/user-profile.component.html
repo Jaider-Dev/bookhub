@@ -1,0 +1,47 @@
+<div class="profile-container">
+  <h2>Mi Perfil</h2>
+
+  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
+
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>Cargando perfil...</p>
+  </div>
+
+  <form *ngIf="!isLoading" (ngSubmit)="save()">
+    <label>Nombre</label>
+    <input [(ngModel)]="formData.nombre" name="nombre" required />
+
+    <label>Email</label>
+    <input [(ngModel)]="formData.email" name="email" required />
+
+    <label>Teléfono</label>
+    <input [(ngModel)]="formData.telefono" name="telefono" />
+
+    <label>Cédula</label>
+    <input [(ngModel)]="formData.cedula" name="cedula" />
+
+    <div style="margin-top:12px;">
+      <button type="submit" class="btn-primary">Guardar</button>
+    </div>
+  </form>
+
+  <hr />
+
+  <h3>Cambiar Contraseña</h3>
+  <form (ngSubmit)="changePassword()">
+    <label>Contraseña actual</label>
+    <input type="password" [(ngModel)]="currentPassword" name="currentPassword" required />
+
+    <label>Nueva contraseña</label>
+    <input type="password" [(ngModel)]="newPassword" name="newPassword" required />
+
+    <label>Confirmar nueva contraseña</label>
+    <input type="password" [(ngModel)]="confirmNewPassword" name="confirmNewPassword" required />
+
+    <div style="margin-top:12px;">
+      <button type="submit" class="btn-primary">Cambiar contraseña</button>
+    </div>
+  </form>
+</div>

@@ -33,4 +33,8 @@ public class EjemplarService {
         }
         return Optional.empty();
     }
+
+    public java.util.List<Ejemplar> findAll() {
+        return ejemplarRepository.findAll();
+    }
 }

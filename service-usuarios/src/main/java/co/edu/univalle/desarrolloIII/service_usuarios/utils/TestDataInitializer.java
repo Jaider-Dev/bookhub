@@ -15,10 +15,19 @@ public class TestDataInitializer {
 
         return args -> {
 
-            if (repository.findByEmail("admin@bookhub.co").isEmpty()) {
+            String rawPassword = "adminpassword";
 
-                String rawPassword = "adminpassword";
-
+            // Si no existe, crear; si existe, forzar la contraseña a la conocida de prueba
+            repository.findByEmail("admin@bookhub.co").ifPresentOrElse(existing -> {
+                existing.setPassword(passwordEncoder.encode(rawPassword));
+                existing.setRol("ADMIN");
+                repository.save(existing);
+                System.out.println("-----------------------------------------------------------------");
+                System.out.println("    USUARIO DE PRUEBA EXISTENTE: contraseña restablecida a 'adminpassword'.");
+                System.out.println("   - Email: admin@bookhub.co");
+                System.out.println("   - Rol: " + existing.getRol());
+                System.out.println("-----------------------------------------------------------------");
+            }, () -> {
                 String hashedPassword = passwordEncoder.encode(rawPassword);
 
                 Usuario admin = Usuario.builder()
@@ -29,16 +38,8 @@ public class TestDataInitializer {
                         .rol("ADMIN")
                         .activo(true)
                         .build();
-
                 repository.save(admin);
-
-                System.out.println("-----------------------------------------------------------------");
-                System.out.println("🚀 USUARIO DE PRUEBA CREADO EN LA BASE DE DATOS:");
-                System.out.println("   - Email: admin@bookhub.co");
-                System.out.println("   - Contraseña: adminpassword");
-                System.out.println("   - Rol: ADMIN");
-                System.out.println("-----------------------------------------------------------------");
-            }
+            });
         };
     }
 }

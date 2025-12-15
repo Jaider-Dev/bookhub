@@ -30,13 +30,11 @@ public class PrestamoService {
     private WebClient webClient;
 
     public Mono<Prestamo> createPrestamo(Prestamo prestamo, String authHeader) {
-        // 1. Validar Usuario (service-usuarios)
         return this.validateUsuario(prestamo.getUsuarioId(), authHeader)
                 .flatMap(usuario -> {
                     if (usuario == null || !usuario.isActivo()) {
                         return Mono.error(new ResponseStatusException(HttpStatus.FORBIDDEN, "El usuario no está activo."));
                     }
-                    // 2. Validar Ejemplar (service-inventario)
                     return this.validateEjemplar(prestamo.getEjemplarId(), authHeader);
                 })
                 .flatMap(ejemplar -> {
@@ -48,7 +46,6 @@ public class PrestamoService {
                             .thenReturn(prestamo);
                 })
                 .flatMap(p -> {
-                    // 4. Registrar el Préstamo (Operación síncrona de JPA)
                     return Mono.fromCallable(() -> prestamoRepository.save(p))
                             .subscribeOn(Schedulers.boundedElastic());
                 });
@@ -131,5 +128,9 @@ public class PrestamoService {
                     log.error("FALLO DE CONEXIÓN CRÍTICO al actualizar el Inventario/Gateway.", t);
                     return Mono.error(new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Fallo de conexión al actualizar el Inventario."));
                 });
+    }
+
+    public java.util.List<Prestamo> findAll() {
+        return prestamoRepository.findAll();
     }
 }

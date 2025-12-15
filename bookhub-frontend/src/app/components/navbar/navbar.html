@@ -1,0 +1,17 @@
+<nav class="navbar">
+    <div class="logo">BookHub</div>
+    
+    <div class="nav-links">
+        
+        <a *ngIf="!authService.isLoggedIn()" routerLink="/login">Login</a>
+
+        <ng-container *ngIf="authService.isLoggedIn()">
+            
+            <a routerLink="/reader">Dashboard</a>
+
+            <a *ngIf="authService.isAdmin()" routerLink="/admin">Administración</a>
+            
+            <button (click)="logout()" class="btn-logout">Cerrar Sesión</button>
+        </ng-container>
+    </div>
+</nav>

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import java.util.List;
 
 @RestController
 @RequestMapping("/prestamos")
@@ -14,6 +15,11 @@ public class PrestamoController {
 
     @Autowired
     private PrestamoService prestamoService;
+
+    @GetMapping
+    public List<Prestamo> getAllPrestamos() {
+        return prestamoService.findAll();
+    }
 
     @PostMapping
     public Mono<Prestamo> crearPrestamo(@RequestHeader("Authorization") String authHeader,

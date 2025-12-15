@@ -1,0 +1,226 @@
+<div class="dashboard-container">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>Lector</h2>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button 
+        [class.active]="selectedSection === 'home'"
+        (click)="selectSection('home')"
+        class="nav-item">
+        Inicio
+      </button>
+      <button 
+        [class.active]="selectedSection === 'inventario'"
+        (click)="selectSection('inventario')"
+        class="nav-item">
+        Explorar Libros
+      </button>
+      <button 
+        [class.active]="selectedSection === 'mis-prestamos'"
+        (click)="selectSection('mis-prestamos')"
+        class="nav-item">
+        Mis Préstamos
+      </button>
+      <button 
+        [class.active]="selectedSection === 'perfil'"
+        (click)="selectSection('perfil')"
+        class="nav-item">
+        Mi Perfil
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button (click)="logout()" class="logout-btn">
+        Cerrar Sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <!-- Mensajes -->
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+      <button (click)="clearMessages()" class="close-alert">×</button>
+    </div>
+
+    <div *ngIf="successMessage" class="alert alert-success">
+      {{ successMessage }}
+      <button (click)="clearMessages()" class="close-alert">×</button>
+    </div>
+
+    <!-- SECCIÓN: INICIO -->
+    <section *ngIf="selectedSection === 'home'" class="content-section">
+      <div class="welcome-card">
+        <h1>¡Bienvenido, {{ usuarioActual?.nombre || 'Lector' }}!</h1>
+        <p class="subtitle">Explora nuestro catálogo de libros y solicita préstamos</p>
+
+        <div class="info-grid">
+          <div class="info-card">
+            <h3>Libros Disponibles</h3>
+            <p>Explora nuestro amplio catálogo de libros</p>
+            <button (click)="selectSection('inventario')" class="btn-primary">
+              Ver Catálogo
+            </button>
+          </div>
+
+          <div class="info-card">
+            <h3>Mis Préstamos</h3>
+            <p>Consulta el estado de tus préstamos activos</p>
+            <button (click)="selectSection('mis-prestamos')" class="btn-primary">
+              Ver Préstamos
+            </button>
+          </div>
+
+          <div class="info-card">
+            <h3>Mi Perfil</h3>
+            <p>Actualiza tu información personal y contraseña</p>
+            <button (click)="selectSection('perfil')" class="btn-primary">
+              Editar Perfil
+            </button>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h2>Información Importante</h2>
+          <ul>
+            <li>Los préstamos tienen un período de duración determinado</li>
+            <li>Si excedes la fecha de devolución, el acceso se puede suspender</li>
+            <li>Solo puedes solicitar préstamos, no hacer devoluciones</li>
+            <li>Contacta con el administrador para devoluciones</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN: EXPLORAR LIBROS -->
+    <section *ngIf="selectedSection === 'inventario'" class="content-section">
+      <h2>Explorar Libros</h2>
+
+      <div class="search-box">
+        <input 
+          type="text" 
+          placeholder="Buscar por título, autor o categoría..."
+          (input)="searchLibros = $any($event.target).value; applyLibroFilters()"
+          class="search-input">
+      </div>
+
+      <div *ngIf="isLoading" class="loading">
+        <div class="spinner"></div>
+        <p>Cargando libros...</p>
+      </div>
+
+      <div *ngIf="!isLoading && librosFiltered.length > 0" class="libros-grid">
+        <div *ngFor="let libro of librosFiltered" class="libro-card">
+          <div class="libro-header">
+            <h3>{{ libro.titulo }}</h3>
+            <span class="categoria-badge">{{ libro.categoria }}</span>
+          </div>
+          <p class="autor">👤 {{ libro.autor }}</p>
+          <p class="ejemplares">📚 Ejemplares: {{ libro.ejemplares }}</p>
+          
+          <button 
+            *ngIf="libro.ejemplares > 0"
+            (click)="openPrestamoForm(libro.id!)"
+            class="btn-primary">
+            📤 Solicitar Préstamo
+          </button>
+          <button 
+            *ngIf="libro.ejemplares === 0"
+            disabled
+            class="btn-disabled">
+            ❌ No disponible
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="!isLoading && librosFiltered.length === 0 && libros.length > 0" class="empty-state">
+        <p>No hay libros que coincidan con tu búsqueda</p>
+      </div>
+
+      <div *ngIf="!isLoading && libros.length === 0" class="empty-state">
+        <p>No hay libros disponibles en el catálogo</p>
+      </div>
+    </section>
+
+    <!-- SECCIÓN: MIS PRÉSTAMOS -->
+    <section *ngIf="selectedSection === 'mis-prestamos'" class="content-section">
+      <h2>Mis Préstamos</h2>
+
+      <div *ngIf="isLoading" class="loading">
+        <div class="spinner"></div>
+        <p>Cargando mis préstamos...</p>
+      </div>
+
+      <div *ngIf="!isLoading && misPrestamos.length > 0" class="prestamos-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Libro</th>
+              <th>Email Usuario</th>
+              <th>Fecha Préstamo</th>
+              <th>Fecha Devolución</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let prestamo of misPrestamos">
+              <td>{{ prestamo.libroTitulo }}</td>
+              <td>{{ prestamo.usuarioEmail }}</td>
+              <td>{{ prestamo.fechaPrestamo | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ prestamo.fechaDevolucion ? (prestamo.fechaDevolucion | date: 'dd/MM/yyyy') : '—' }}</td>
+              <td>
+                <span [class.badge-active]="prestamo.estado === 'ACTIVO'"
+                      [class.badge-devuelto]="prestamo.estado === 'DEVUELTO'"
+                      [class.badge-vencido]="prestamo.estado === 'VENCIDO'"
+                      class="badge">
+                  {{ prestamo.estado }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!isLoading && misPrestamos.length === 0" class="empty-state">
+        <p>No tienes préstamos registrados</p>
+      </div>
+    </section>
+
+    <!-- SECCIÓN: MI PERFIL -->
+    <section *ngIf="selectedSection === 'perfil'" class="content-section">
+      <app-user-profile></app-user-profile>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL: SOLICITAR PRÉSTAMO -->
+<div *ngIf="showPrestamoForm" class="modal-overlay" (click)="closePrestamoForm()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Solicitar Préstamo</h3>
+      <button (click)="closePrestamoForm()" class="close-btn">×</button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="ejemplaresForSelectedLibro.length > 0">
+        <label for="ejemplarSelect">Seleccione el ejemplar disponible</label>
+        <select id="ejemplarSelect" [(ngModel)]="selectedEjemplarId" class="select-ejemplar">
+          <option [ngValue]="null">-- Seleccione --</option>
+          <option *ngFor="let ej of ejemplaresForSelectedLibro" [ngValue]="ej.id">Ejemplar #{{ ej.id }}</option>
+        </select>
+      </div>
+
+      <div *ngIf="ejemplaresForSelectedLibro.length === 0">
+        <p>No hay ejemplares disponibles para este libro.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button (click)="closePrestamoForm()" class="btn-secondary">Cancelar</button>
+        <button (click)="createPrestamo()" class="btn-primary">Confirmar Préstamo</button>
+      </div>
+    </div>
+  </div>
+</div>

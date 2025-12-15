@@ -1,0 +1,153 @@
+<div class="prestamos-container">
+  <div class="header">
+    <h2>Gestión de Préstamos</h2>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-navigation">
+    <button [class.active]="activeTab === 'registrar'" (click)="selectTab('registrar')" class="tab-btn">
+      Registrar Préstamo
+    </button>
+    <button [class.active]="activeTab === 'devolver'" (click)="selectTab('devolver')" class="tab-btn">
+      Devoluciones
+    </button>
+  </div>
+
+  <!-- Error/Success Messages -->
+  <div *ngIf="errorMessage" class="error-message">
+    <strong>Error:</strong> {{ errorMessage }}
+    <button (click)="errorMessage = ''" class="close-message">✕</button>
+  </div>
+
+  <div *ngIf="successMessage" class="success-message">
+    <strong>✓</strong> {{ successMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>Cargando préstamos...</p>
+  </div>
+
+  <!-- Registrar Tab -->
+  <section *ngIf="activeTab === 'registrar' && !isLoading" class="tab-content">
+    <button (click)="openForm()" class="btn-primary" style="margin-bottom: 15px;">+ Nuevo Préstamo</button>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Usuario</th>
+          <th>Libro</th>
+          <th>Fecha Préstamo</th>
+          <th>Devolución Esperada</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let prestamo of prestamos | slice:0:50">
+          <td>{{ prestamo.id }}</td>
+          <td>{{ prestamo.usuarioEmail }}</td>
+          <td><strong>{{ prestamo.libroTitulo }}</strong></td>
+          <td>{{ prestamo.fechaPrestamo }}</td>
+          <td>{{ prestamo.fechaDevolucion || '—' }}</td>
+          <td>
+            <span [ngClass]="'estado-' + prestamo.estado.toLowerCase()" class="badge">
+              {{ prestamo.estado }}
+            </span>
+          </td>
+          <td class="actions">
+            <button *ngIf="prestamo.estado === 'ACTIVO'" 
+                    (click)="devolverPrestamo(prestamo.id!, prestamo)" 
+                    class="btn-success">✓</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Devoluciones Tab -->
+  <section *ngIf="activeTab === 'devolver' && !isLoading" class="tab-content">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Usuario</th>
+          <th>Libro</th>
+          <th>Fecha Préstamo</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let prestamo of prestamos">
+          <td>{{ prestamo.id }}</td>
+          <td>{{ prestamo.usuarioEmail }}</td>
+          <td><strong>{{ prestamo.libroTitulo }}</strong></td>
+          <td>{{ prestamo.fechaPrestamo }}</td>
+          <td>
+            <span class="badge" [ngClass]="'estado-' + prestamo.estado.toLowerCase()">{{ prestamo.estado }}</span>
+          </td>
+          <td class="actions">
+            <button *ngIf="prestamo.estado === 'ACTIVO'" 
+                    (click)="devolverPrestamo(prestamo.id!, prestamo)" 
+                    class="btn-success">✓ Devolver</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Modal Form -->
+  <div *ngIf="showForm" class="modal-overlay" (click)="closeForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Registrar Nuevo Préstamo</h3>
+        <button (click)="closeForm()" class="close-btn">✕</button>
+      </div>
+
+      <form class="modal-body" (ngSubmit)="savePrestamo()">
+        <div class="form-group">
+          <label>ID Usuario *</label>
+          <input [(ngModel)]="formData.usuarioId" name="usuarioId" type="number" required placeholder="ID del usuario">
+        </div>
+
+        <div class="form-group">
+          <label>ID Ejemplar *</label>
+          <input [(ngModel)]="formData.ejemplarId" name="ejemplarId" type="number" required placeholder="ID del ejemplar">
+        </div>
+
+        <div class="form-group">
+          <label>Fecha Devolución Esperada</label>
+          <input [(ngModel)]="formData.fechaDevolucionEsperada" name="fechaDevolucionEsperada" type="date" placeholder="Fecha esperada de devolución">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" (click)="closeForm()" class="btn-secondary">Cancelar</button>
+          <button type="submit" class="btn-primary">Registrar Préstamo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Devolución -->
+  <div *ngIf="showDevolucionForm" class="modal-overlay" (click)="closeDevolucionForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Confirmar Devolución</h3>
+        <button (click)="closeDevolucionForm()" class="close-btn">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="confirmation-text" *ngIf="prestamoEnDevolucion">
+          ¿Deseas confirmar la devolución del libro <strong>{{ prestamoEnDevolucion.libroTitulo }}</strong> 
+          que pidió <strong>{{ prestamoEnDevolucion.usuarioEmail }}</strong>?
+        </p>
+        <div class="modal-footer">
+          <button type="button" (click)="closeDevolucionForm()" class="btn-secondary">Cancelar</button>
+          <button type="button" (click)="confirmarDevolucion()" class="btn-primary">Confirmar Devolución</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
