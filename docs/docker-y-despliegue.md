@@ -1,46 +1,91 @@
-## 4. Docker y despliegue con docker-compose
+# Guía de Despliegue y Contenerización
 
-### 4.1 Imagen Docker para cada microservicio (Spring Boot)
+El proyecto está diseñado bajo la filosofía **"Infrastructure as Code"** utilizando Docker. Esto asegura que el entorno de desarrollo sea idéntico al de producción y elimina los problemas de "en mi máquina funciona".
 
-Cada microservicio (`bookhub-gateway`, `service-usuarios`, `service-inventario`, `service-prestamos`) utiliza un `Dockerfile` multi-stage:
+## 1. Estrategia de Construcción (Dockerfiles)
 
-- **Stage 1 (build)**: usa `maven:3.9-eclipse-temurin-17` para compilar el proyecto y generar el `.jar`.
-- **Stage 2 (runtime)**: usa `eclipse-temurin:17-jre` para ejecutar el `.jar` resultante.
+### 1.1 Backend (Java Spring Boot)
+Se utiliza **Multi-Stage Build** para reducir el tamaño final de la imagen y asegurar que el código fuente no quede en el contenedor final.
 
-Las propiedades de conexión a base de datos se parametrizan con variables de entorno (`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`).
+```dockerfile
+# Etapa 1: Compilación (Build)
+FROM maven:3.9-eclipse-temurin-21 AS build
+COPY . .
+RUN mvn -q -DskipTests package
 
-### 4.2 Imagen Docker para el frontend Angular
+# Etapa 2: Ejecución (Runtime)
+FROM eclipse-temurin:21-jre
+COPY --from=build /app/target/*.jar app.jar
+ENTRYPOINT ["java","-jar","/app/app.jar"]
+```
+*   **Ventaja**: La imagen final solo contiene el JRE y el JAR compilado (~200MB), descartando Maven y el código fuente (~800MB).
 
-El frontend `bookhub-frontend` también usa un `Dockerfile` multi-stage:
+### 1.2 Frontend (Angular)
+Similar al backend, se compila en una imagen Node y se sirve en una imagen Nginx.
 
-- **Stage 1**: `node:20-alpine` para instalar dependencias y ejecutar `npm run build`.
-- **Stage 2**: `nginx:alpine` para servir los archivos estáticos.
+```dockerfile
+# Etapa 1: Compilación
+FROM node:20-alpine AS build
+RUN npm run build
 
-### 4.3 Orquestación con `docker-compose.yml`
+# Etapa 2: Servidor Web
+FROM nginx:alpine
+COPY --from=build /dist/bookhub-frontend /usr/share/nginx/html
+```
+*   **Ventaja**: Nginx es mucho más eficiente para servir archivos estáticos que un servidor Node.js de desarrollo.
 
-El archivo `docker-compose.yml` en la raíz del proyecto define los servicios:
+## 2. Orquestación (Docker Compose)
 
-- `mysql`: base de datos MySQL con las bases `bookhub_usuarios`, `bookhub_inventario`, `bookhub_prestamos`.
-- `bookhub-gateway`: API Gateway en el puerto 8080.
-- `service-usuarios`: microservicio de usuarios en el puerto 8081.
-- `service-inventario`: microservicio de inventario en el puerto 8082.
-- `service-prestamos`: microservicio de préstamos en el puerto 8083.
-- `bookhub-frontend`: frontend Angular servido por Nginx en el puerto 4200.
+El archivo `docker-compose.yml` define la topología del sistema.
 
-Los servicios backend dependen de `mysql` y se conectan a él usando el hostname `mysql` (no `localhost`).
+### 2.1 Redes (`networks`)
+Se define una red personalizada `bookhub-network` tipo **bridge**.
+*   Todos los contenedores se comunican entre sí usando sus nombres de servicio como DNS (e.g., `service-usuarios` resuelve a la IP interna del contenedor).
+*   El contenedor `mysql` no expone puerto al host (por seguridad por defecto), solo es accesible por los microservicios dentro de la red.
 
-### 4.4 Ejecución
+### 2.2 Volúmenes (`volumes`)
+Se utiliza un volumen nombrado `mysql_data` para persistencia.
+*   **Propósito**: Si se elimina el contenedor de la base de datos, la información (libros, usuarios) NO se pierde.
 
-Desde la raíz del proyecto:
+### 2.3 Healthchecks (Control de flujo)
+Para solucionar problemas de concurrencia (Condiciones de carrera), se implementaron verificaciones de salud.
+*   **Caso**: El Gateway intentaba conectar a `service-usuarios` antes de que este iniciara.
+*   **Solución**:
+    ```yaml
+    service-usuarios:
+      healthcheck:
+        test: "wget --spider -q http://localhost:8081/usuarios || exit 1"
+    
+    bookhub-gateway:
+      depends_on:
+        service-usuarios:
+          condition: service_healthy
+    ```
+
+## 3. Comandos de Ejecución
+
+Para iniciar todo el sistema desde cero:
 
 ```bash
-docker compose up -d
+# Construir imágenes y levantar servicios en segundo plano
+docker compose up -d --build
 ```
 
-Esto construirá las imágenes necesarias (si no existen) y levantará:
+Para ver los logs en tiempo real:
 
-- Frontend: `http://localhost:4200`
-- Gateway: `http://localhost:8080`
+```bash
+# Ver logs de todos los contenedores
+docker compose logs -f
+```
 
+Para detener y limpiar todo:
 
+```bash
+# Detiene contenedores y elimina redes (mantiene volúmenes)
+docker compose down
+```
 
+---
+
+![alt text](img/image-2.png)
+![alt text](img/image-3.png)

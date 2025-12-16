@@ -1,44 +1,97 @@
-# 1. Descripción del problema
+# INFORME FINAL INTEGRADO - BOOKHUB
+**Programa:** Ingeniería de Sistemas  
+**Materia:** Desarrollo de Software III  
+**Docente:** Mg(c). Juan Pablo Pinillos Reina  
+**Estudiante:** Jaider Bermudez Giron
 
-En la actualidad, muchas bibliotecas pequeñas o comunitarias gestionan su inventario y préstamos de manera manual o mediante hojas de cálculo desconectadas. Esto conlleva problemas como:
-- Desactualización del inventario en tiempo real.
-- Errores humanos en el registro de préstamos y devoluciones.
-- Dificultad para mantener una base de datos de usuarios segura y centralizada.
-- Falta de accesibilidad para que los usuarios consulten la disponibilidad de libros desde internet.
+---
 
-La ausencia de un sistema integrado dificulta el control de los recursos y empeora la experiencia tanto de los bibliotecarios como de los lectores.
+# 1. Descripción del Problema
+La gestión monolítica y manual de bibliotecas presenta desafíos de concurrencia y consistencia de datos. Los sistemas tradicionales centralizados sufren de **Single Point of Failure (SPOF)** y acoplamiento fuerte, lo que dificulta la mantenibilidad evolutiva. **BookHub** nace para resolver la necesidad de un sistema distribuido, tolerante a fallos y accesible vía web.
 
-# 2. Objetivo general de la aplicación
+# 2. Objetivo General
+Diseñar e implementar **BookHub**, una plataforma SaaS (Software as a Service) para la gestión bibliotecaria, utilizando una arquitectura de **Microservicios** orquestada por contenedores. El objetivo es desacoplar la lógica de negocio en dominios acotados (Usuarios, Inventario, Préstamos) garantizando la independencia de despliegue y escalabilidad horizontal.
 
-Desarrollar una aplicación web basada en una arquitectura de microservicios que permita gestionar de manera integral el inventario de libros, el registro de usuarios y el control de préstamos de la biblioteca **Bookhub**, garantizando la persistencia de datos y facilitando su despliegue mediante contenedores Docker.
+# 3. Objetivos Específicos (Técnicos)
+1.  **Desacoplamiento de Datos**: Implementar el patrón *Database per Service*, segregando esquemas SQL para asegurar que ningún servicio pueda violar la integridad de otro mediante accesos directos a la BD.
+2.  **Seguridad Centralizada**: Implementar un **API Gateway** como punto de entrada único que gestione *Cross-Cutting Concerns* como CORS, enrutamiento y rate-limiting básico.
+3.  **Comunicación Inter-Servicios**: Establecer canales de comunicación sincrona utilizando **WebClient (Reactivo)** para la validación de integridad referencial distribuida (ej: Validar existencia de Usuario antes de crear Préstamo).
+4.  **Infraestructura como Código (IaC)**: Definir la totalidad de la infraestructura mediante `Dockerfile` y `docker-compose.yml`, eliminando dependencias del entorno local del desarrollador.
 
-# 3. Objetivos específicos
+# 4. Justificación Tecnológica
+La elección de **Spring Boot** se justifica por su robustez, ecosistema maduro (Spring Cloud, Spring Data) y facilidad para crear aplicaciones *Cloud-Native*.
+**Docker** se selecciona para garantizar el aislamiento de procesos y dependencias, permitiendo que el Frontend (Node/Nginx) y los Backends (Java) convivan sin conflictos de librerías.
+**Angular** provee una SPA (Single Page Application) reactiva que consume la API REST, mejorando la experiencia de usuario (UX) al evitar recargas completas de página.
 
-- **Diseñar y estructurar la base de datos** relacional (MySQL) para persistir la información de usuarios, libros, ejemplares, autores, categorías y préstamos, asegurando la integridad referencial.
-- **Implementar una API REST** robusta utilizando Spring Boot (Java) para exponer los servicios de negocio y permitir la comunicación entre el frontend y el backend.
-- **Integrar los microservicios** mediante el patrón API Gateway para centralizar el acceso y gestionar la seguridad y el enrutamiento.
-- **Contenerizar los servicios** utilizando Docker y crear un archivo `docker-compose.yml` para orquestar el despliegue de todo el sistema (Base de datos, Backend y Frontend) en un solo comando.
-- **Desarrollar una interfaz web** intuitiva utilizando Angular para permitir a los usuarios y administradores interactuar con el sistema.
+# 5. Arquitectura del Sistema
 
-# 4. Justificación de la aplicación
+## 5.1 Patrón de Microservicios
+El sistema implementa una arquitectura distribuida con los siguientes componentes:
+- **API Gateway (`bookhub-gateway`)**: Punto de entrada único (Puerto 8080) implementado con Spring Cloud Gateway. Enruta peticiones y maneja seguridad básica (Filtros).
+- **Service Users (`service-usuarios`)**: Microservicio (Puerto 8081) encargado de la autenticación (JWT) y gestión de usuarios.
+- **Service Inventory (`service-inventario`)**: Microservicio (Puerto 8082) encargado de libros, autores, categorías y ejemplares.
+- **Service Loans (`service-prestamos`)**: Microservicio (Puerto 8083) encargado de la lógica de negocio de préstamos y devoluciones.
 
-- **¿Por qué se eligió esa temática?**: La gestión de bibliotecas es un problema clásico que permite explorar a fondo los patrones de diseño, relaciones entre entidades (préstamos, inventario) y la separación de responsabilidades, siendo ideal para aplicar una arquitectura de microservicios.
-- **¿Qué problema real resuelve?**: Automatiza procesos manuales, reduce el riesgo de pérdida de libros y mejora el acceso a la información cultural.
-- **¿Quién lo usaría?**:
-    - **Bibliotecarios (Administradores)**: Para gestionar el catálogo y registrar préstamos/devoluciones.
-    - **Lectores (Usuarios)**: Para buscar libros disponibles y revisar su historial de préstamos.
+## 5.2 Estructura de Base de Datos
+Se utiliza MySQL contenedorizado (`bookhub-mysql`), con esquemas lógicos separados para garantizar desacoplamiento:
+1.  **`bookhub_usuarios`**: Tabla `usuarios`.
+2.  **`bookhub_inventario`**: Tablas `libro`, `autor`, `categoria`, `ejemplar` (con Relaciones FK).
+3.  **`bookhub_prestamos`**: Tabla `prestamo`.
 
-# 5. Conclusiones finales del proyecto
+# 6. API REST y Servicios
 
-## Dificultades
-- **Configuración de Docker Networking**: Un desafío principal fue asegurar que los contenedores se comunicaran correctamente entre sí (Gateway -> Servicios) y con la base de datos, resolviendo problemas de resolución de nombres y condiciones de carrera en el inicio (`depends_on`).
-- **Mapeo de Entidades**: La sincronización de modelos de datos entre el Frontend (Angular) y el Backend (Java/JPA), como el manejo de Enums y tipos de datos (Boolean vs boolean).
+## Microservicio Usuarios
+- **Entidad**: `Usuario` (id, email, password, activo, rol).
+- **Endpoints**:
+    - `POST /usuarios/login`: Autenticación.
+    - `POST /usuarios/create`: Registro público.
 
-## Aprendizajes
-- Se profundizó en el uso de **Spring Boot** y **Spring Cloud Gateway** para construir sistemas escalables.
-- Se comprendió la importancia de la **Inyección de Dependencias** y los patrones de diseño.
-- Se adquirió experiencia práctica en **DevOps** básico mediante la creación de Dockerfiles y la orquestación con Docker Compose.
+## Microservicio Inventario
+- **Entidades**: `Libro`, `Ejemplar`.
+- **Endpoints**:
+    - `GET /inventario/libros`: Catálogo público.
+    - `POST /inventario/ejemplares`: Gestión de inventario físico.
 
-## Recomendaciones
-- Para futuras versiones, se recomienda implementar un **Service Discovery** (como Eureka) para evitar el acoplamiento a nombres de host estáticos en el Gateway.
-- Añadir **Tests Unitarios** y de Integración automatizados para detectar errores de regresión antes del despliegue.
+## Microservicio Préstamos
+- **Entidad**: `Prestamo`.
+- **Endpoints**:
+    - `POST /prestamos`: Crear nuevo préstamo (Valida disponibilidad vía WebClient).
+    - `PUT /prestamos/{id}/devolver`: Registrar devolución.
+
+# 7. Docker y Despliegue
+
+El proyecto incluye un archivo `docker-compose.yml` que orquesta 6 contenedores:
+1.  MySQL (Persistencia).
+2.  Service Usuarios (Backend).
+3.  Service Inventario (Backend).
+4.  Service Prestamos (Backend).
+5.  API Gateway (Router).
+6.  Angular Frontend (Nginx).
+
+**Salud del Sistema (Healthchecks):**
+Se implementaron healthchecks en los servicios críticos (MySQL, Usuarios) para evitar condiciones de carrera (Race Conditions) al iniciar el sistema.
+
+# 8. Capturas del Sistema
+
+> **NOTA PARA EL ESTUDIANTE:** Inserte aquí las capturas de pantalla de su sistema funcionando.
+
+## 8.1 Login y Registro
+*[Inserte Captura del Login]*
+
+## 8.2 Dashboard del Lector (Catálogo)
+*[Inserte Captura del Catálogo]*
+
+## 8.3 Gestión de Préstamos (Admin)
+*[Inserte Captura de la creación de un préstamo]*
+
+# 9. Conclusiones y Lecciones Aprendidas
+
+## 9.1 Desafíos Técnicos Superados
+- **Orquestación de Inicio (Race Conditions)**: Se detectó que el API Gateway iniciaba antes que los microservicios downstream, provocando errores 503. Se solucionó implementando **Healthchecks** en Docker Compose, forzando al Gateway a esperar el estado `healthy` de los servicios.
+- **Transaccionalidad Distribuida**: Al no usar un orquestador de transacciones (Saga), se asumió consistencia eventual. Se aprendió la importancia de diseñar operaciones idempotentes.
+
+## 9.2 Valor de la Arquitectura
+La arquitectura de microservicios, aunque introduce complejidad operativa, demostró su valor al permitir desarrollar y desplegar el módulo de `service-prestamos` sin afectar la disponibilidad del módulo de `service-usuarios`.
+
+---
+**Repositorio GitHub:** https://github.com/Jaider-Dev/bookhub

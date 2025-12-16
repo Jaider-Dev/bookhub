@@ -1,37 +1,85 @@
-## 5. Patrón de microservicio utilizado
+# Arquitectura del Sistema BookHub
 
-- **API Gateway**: implementado con `bookhub-gateway` (Spring Cloud Gateway).
-- **Microservicios independientes**:
-  - `service-usuarios` (autenticación y gestión de usuarios).
-  - `service-inventario` (gestión de libros / inventario).
-  - `service-prestamos` (gestión de préstamos y devoluciones).
+## 1. Visión General de la Arquitectura
+El sistema **BookHub** sigue un patrón de **Arquitectura de Microservicios**, diseñado para garantizar la escalabilidad, el desacoplamiento y la mantenibilidad. Cada componente del sistema es autónomo y se comunica a través de protocolos ligeros (HTTP/REST) gestionados por un **API Gateway** central.
 
-Opcionalmente se puede documentar:
+### Diagrama de Componentes (C4 Nivel 2)
+El siguiente diagrama ilustra la interacción entre el Frontend, el API Gateway, los Microservicios y las bases de datos.
 
-- **Service Registry (Eureka)**: no implementado actualmente.
-- **Circuit Breaker / Resilience4j**: no implementado actualmente.
+```mermaid
+graph TD
+    User((Usuario Web))
+    
+    subgraph "Docker Host"
+        Frontend[("Angular Frontend<br/>(Nginx Server)")]
+        Gateway[("API Gateway<br/>(Spring Cloud Gateway)")]
+        
+        subgraph "Backend Services Layout"
+            Users[("Service Usuarios<br/>(Auth & Profile)")]
+            Inventory[("Service Inventario<br/>(Books & Stock)")]
+            Loans[("Service Prestamos<br/>(Business Logic)")]
+        end
+        
+        DB[("MySQL Database<br/>(3 Logical Schemas)")]
+    end
 
-## 6. Arquitectura general
+    User -- "HTTPS / Browser" --> Frontend
+    Frontend -- "REST API JSON" --> Gateway
+    
+    Gateway -- "/usuarios/**" --> Users
+    Gateway -- "/inventario/**" --> Inventory
+    Gateway -- "/prestamos/**" --> Loans
+    
+    Loans -- "WebClient (Sync)" --> Users
+    Loans -- "WebClient (Sync)" --> Inventory
+    
+    Users -- "JPA/JDBC" --> DB
+    Inventory -- "JPA/JDBC" --> DB
+    Loans -- "JPA/JDBC" --> DB
+    
+    style Gateway fill:#f9f,stroke:#333,stroke-width:2px
+    style DB fill:#ff9,stroke:#333,stroke-width:2px
+```
 
-Componentes principales:
+## 2. Componentes del Sistema
 
-- **Frontend Angular** (`bookhub-frontend`): interfaz para administradores y lectores.
-- **API Gateway** (`bookhub-gateway`): punto de entrada único a los microservicios.
-- **Microservicios**:
-  - `service-usuarios` en puerto 8081.
-  - `service-inventario` en puerto 8082.
-  - `service-prestamos` en puerto 8083.
-- **Base de datos MySQL**: contenedor Docker con varias bases de datos lógicas (`bookhub_usuarios`, `bookhub_inventario`, `bookhub_prestamos`).
+### 2.1 API Gateway (`bookhub-gateway`)
+**Rol:** Punto de entrada único (Reverse Proxy).
+- **Tecnología:** Spring Cloud Gateway.
+- **Responsabilidad:**
+    - Enrutamiento dinámico de peticiones hacia los microservicios.
+    - Manejo de **CORS** (Cross-Origin Resource Sharing) global.
+    - Abstracción de la topología de la red interna (Docker Network).
 
-Flujo básico:
+### 2.2 Microservicio de Usuarios (`service-usuarios`)
+**Rol:** Gestión de identidad y acceso (IAM).
+- **Puerto Interno:** 8081.
+- **Funciones:**
+    - Registro de usuarios.
+    - Autenticación segura y emisión de **Tokens JWT** (JSON Web Tokens).
+    - Validación de roles (LECTOR, ADMIN).
+    - **Patrón:** Controller-Service-Repository.
 
-1. El usuario accede al **frontend Angular**.
-2. El frontend llama al **API Gateway** en el puerto 8080.
-3. El gateway enruta las peticiones a:
-   - `/usuarios/**` → `service-usuarios` (8081)
-   - `/inventario/**` → `service-inventario` (8082)
-   - `/prestamos/**` → `service-prestamos` (8083)
-4. Cada microservicio accede a la base de datos MySQL mediante JPA.
+### 2.3 Microservicio de Inventario (`service-inventario`)
+**Rol:** Catálogo bibliográfico.
+- **Puerto Interno:** 8082.
+- **Funciones:**
+    - Gestión de Libros, Autores y Categorías.
+    - Control de unidades físicas (**Ejemplares**) y su estado (`DISPONIBLE`, `PRESTADO`).
 
+### 2.4 Microservicio de Préstamos (`service-prestamos`)
+**Rol:** Núcleo transaccional.
+- **Puerto Interno:** 8083.
+- **Funciones:**
+    - Orquestación del proceso de préstamo.
+    - Comunicación síncrona con *Inventario* (para verificar disponibilidad) y *Usuarios* (para validar identidad).
+    - Registro de fechas de vencimiento y devoluciones.
+
+## 3. Patrones de Diseño Implementados
+
+1.  **API Gateway Pattern**: Oculta la complejidad de los microservicios al cliente.
+2.  **Database per Service (Lógico)**: Aunque comparten el contenedor MySQL, cada servicio posee su propio esquema (`bookhub_usuarios`, `bookhub_inventario`, etc.), garantizando que un servicio no acceda directamente a las tablas de otro.
+3.  **DTO (Data Transfer Object)**: Se utilizan objetos específicos para la transferencia de datos entre capas y servicios, evitando exponer las Entidades JPA directamente.
+4.  **Sync Communication**: Uso de `WebClient` (reactivo pero usado síncronamente) para la validación entre servicios.
 
 
