@@ -1,3 +1,7 @@
+-- Configurar codificación
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 -- Crear bases de datos
 CREATE DATABASE IF NOT EXISTS bookhub_usuarios;
 CREATE DATABASE IF NOT EXISTS bookhub_inventario;

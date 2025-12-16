@@ -1,12 +1,18 @@
 # BookHub - Sistema de Gestión de Bibliotecas
 
-> **Desarrollo de Software III - Proyecto Final**
-> **Autor:** Jaider Bermudez (Jaider-Dev)
-> **Programa:** Ingeniería de Sistemas
-> **Tecnologías:** Java 21, Spring Boot 3.4, Angular 17, Docker, MySQL.
-> **Docente:** Mg(c). Juan Pablo Pinillos Reina
-> **Institución:** Universidad del Valle
-> **Tema:** Sistema de Gestión de Bibliotecas "BookHub"
+**Desarrollo de Software III - Proyecto Final**
+
+**Autor:** Jaider Bermudez (Jaider-Dev)
+
+**Programa:** Ingeniería de Sistemas
+
+**Tecnologías:** Java 21, Spring Boot 3.4, Angular 17, Docker, MySQL.
+
+**Docente:** Mg(c). Juan Pablo Pinillos Reina
+
+**Institución:** Universidad del Valle
+
+**Tema:** Sistema de Gestión de Bibliotecas "BookHub"
 
 
 ---
