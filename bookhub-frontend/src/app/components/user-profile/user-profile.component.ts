@@ -91,11 +91,13 @@ export class UserProfileComponent implements OnInit {
     this.usuariosService.updateUsuario(this.currentUserId, payload).subscribe({
       next: () => {
         this.successMessage = '✅ Perfil actualizado correctamente.';
-        setTimeout(() => this.successMessage = '', 3000);
+        setTimeout(() => this.successMessage = '', 5000);
       },
       error: (err) => {
         console.error('Error actualizando perfil:', err);
-        this.errorMessage = 'Error al actualizar el perfil.';
+        const errorMsg = typeof err.error === 'string' ? err.error : (err.error?.message || 'Error al actualizar el perfil.');
+        this.errorMessage = errorMsg;
+        setTimeout(() => this.errorMessage = '', 5000);
       }
     });
   }

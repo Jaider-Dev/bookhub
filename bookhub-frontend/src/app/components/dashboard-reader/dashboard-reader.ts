@@ -45,7 +45,7 @@ export class DashboardReaderComponent implements OnInit {
     private prestamosService: PrestamosService,
     private usuariosService: UsuariosService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadUserData();
@@ -143,6 +143,9 @@ export class DashboardReaderComponent implements OnInit {
   }
 
   createPrestamo(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
     if (!this.usuarioActual || !this.selectedEjemplarId) {
       this.errorMessage = 'Selecciona un ejemplar disponible antes de solicitar el préstamo.';
       return;
@@ -153,15 +156,22 @@ export class DashboardReaderComponent implements OnInit {
       ejemplarId: this.selectedEjemplarId
     };
 
+    this.isLoading = true;
     this.prestamosService.createPrestamo(request).subscribe({
       next: () => {
-        this.successMessage = 'Préstamo registrado correctamente';
+        this.isLoading = false;
+        this.successMessage = '✅ Préstamo registrado correctamente';
         this.closePrestamoForm();
         this.loadMisPrestamos();
+        this.loadLibros(); // Recargar libros para actualizar disponibilidad
+        setTimeout(() => this.successMessage = '', 5000);
       },
       error: (error) => {
+        this.isLoading = false;
         console.error('Error creando préstamo:', error);
-        this.errorMessage = error.error?.message || 'Error al crear préstamo';
+        const errorMsg = typeof error.error === 'string' ? error.error : (error.error?.message || 'Error al crear préstamo');
+        this.errorMessage = errorMsg;
+        setTimeout(() => this.errorMessage = '', 5000);
       }
     });
   }
@@ -169,7 +179,7 @@ export class DashboardReaderComponent implements OnInit {
   loadEjemplaresForLibro(libroId: number): void {
     this.inventarioService.getEjemplares().subscribe({
       next: (data) => {
-        this.ejemplaresForSelectedLibro = data.filter(e => e.libroId === libroId && e.disponible);
+        this.ejemplaresForSelectedLibro = data.filter(e => e.libroId === libroId && e.estado === 'DISPONIBLE');
         if (this.ejemplaresForSelectedLibro.length === 0) {
           this.errorMessage = 'No hay ejemplares disponibles para este libro.';
         } else {

@@ -71,22 +71,24 @@ input:disabled {
     text-align: center;
 }
 
-.test-credentials {
-    margin-top: 30px;
+.register-link {
+    margin-top: 20px;
+    text-align: center;
     padding: 15px;
-    background-color: #d1ecf1;
-    border: 1px solid #bee5eb;
-    border-radius: 4px;
-    color: #0c5460;
 }
 
-.test-credentials h4 {
-    margin-top: 0;
-    margin-bottom: 10px;
-}
-
-.test-credentials p {
+.register-link p {
     margin: 0;
     font-size: 14px;
-    line-height: 1.6;
+    color: #333;
+}
+
+.register-link a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.register-link a:hover {
+    text-decoration: underline;
 }

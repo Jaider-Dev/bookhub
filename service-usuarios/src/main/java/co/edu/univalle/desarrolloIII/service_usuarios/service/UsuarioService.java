@@ -31,6 +31,20 @@ public class UsuarioService {
     }
 
     public Usuario guardarUsuario(Usuario usuario) {
+        // Validar que no exista otro usuario con la misma cédula
+        if (usuario.getCedula() != null && !usuario.getCedula().isEmpty()) {
+            Optional<Usuario> usuarioConCedula = usuarioRepository.findByCedula(usuario.getCedula());
+            if (usuarioConCedula.isPresent() && !usuarioConCedula.get().getId().equals(usuario.getId())) {
+                throw new RuntimeException("Ya existe un usuario con esta cédula");
+            }
+        }
+
+        // Validar que no exista otro usuario con el mismo email
+        Optional<Usuario> usuarioConEmail = usuarioRepository.findByEmail(usuario.getEmail());
+        if (usuarioConEmail.isPresent() && !usuarioConEmail.get().getId().equals(usuario.getId())) {
+            throw new RuntimeException("Ya existe un usuario con este correo electrónico");
+        }
+
         if (usuario.getPassword() != null) {
             usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
         }
@@ -48,10 +62,38 @@ public class UsuarioService {
     public Optional<Usuario> actualizarUsuario(Long id, Usuario usuarioDetails) {
         return usuarioRepository.findById(id)
                 .map(usuarioExistente -> {
+                    // Validar cédula única si se está cambiando
+                    if (usuarioDetails.getCedula() != null && !usuarioDetails.getCedula().isEmpty()) {
+                        Optional<Usuario> usuarioConCedula = usuarioRepository.findByCedula(usuarioDetails.getCedula());
+                        if (usuarioConCedula.isPresent() && !usuarioConCedula.get().getId().equals(id)) {
+                            throw new RuntimeException("Ya existe un usuario con esta cédula");
+                        }
+                        usuarioExistente.setCedula(usuarioDetails.getCedula());
+                    }
+
+                    // Validar email único si se está cambiando
+                    if (usuarioDetails.getEmail() != null
+                            && !usuarioDetails.getEmail().equals(usuarioExistente.getEmail())) {
+                        Optional<Usuario> usuarioConEmail = usuarioRepository.findByEmail(usuarioDetails.getEmail());
+                        if (usuarioConEmail.isPresent() && !usuarioConEmail.get().getId().equals(id)) {
+                            throw new RuntimeException("Ya existe un usuario con este correo electrónico");
+                        }
+                        usuarioExistente.setEmail(usuarioDetails.getEmail());
+                    }
+
                     // Actualiza los campos necesarios
                     usuarioExistente.setNombre(usuarioDetails.getNombre());
-                    usuarioExistente.setEmail(usuarioDetails.getEmail());
-                    usuarioExistente.setRol(usuarioDetails.getRol());
+                    if (usuarioDetails.getTelefono() != null) {
+                        usuarioExistente.setTelefono(usuarioDetails.getTelefono());
+                    }
+                    if (usuarioDetails.getRol() != null) {
+                        usuarioExistente.setRol(usuarioDetails.getRol());
+                    }
+                    // Validar estado activo
+                    if (usuarioDetails.getActivo() != null
+                            && !usuarioDetails.getActivo().equals(usuarioExistente.getActivo())) {
+                        usuarioExistente.setActivo(usuarioDetails.getActivo());
+                    }
                     return usuarioRepository.save(usuarioExistente);
                 });
     }

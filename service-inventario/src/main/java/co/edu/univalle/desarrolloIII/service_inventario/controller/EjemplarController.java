@@ -35,8 +35,24 @@ public class EjemplarController {
 
     @PutMapping("/{id}/estado")
     public ResponseEntity<?> updateEjemplarEstado(@PathVariable Long id,
-                                                  @RequestParam EstadoEjemplar nuevoEstado) {
-        Optional<Ejemplar> updatedEjemplar = ejemplarService.updateEstado(id, nuevoEstado);
+                                                  @RequestParam(required = false) EstadoEjemplar nuevoEstado,
+                                                  @RequestParam(required = false) String nuevoEstadoStr) {
+        EstadoEjemplar estadoFinal = nuevoEstado;
+        
+        // Si viene como string, convertir
+        if (estadoFinal == null && nuevoEstadoStr != null) {
+            try {
+                estadoFinal = EstadoEjemplar.valueOf(nuevoEstadoStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body("Estado inválido: " + nuevoEstadoStr);
+            }
+        }
+        
+        if (estadoFinal == null) {
+            return ResponseEntity.badRequest().body("Estado requerido");
+        }
+        
+        Optional<Ejemplar> updatedEjemplar = ejemplarService.updateEstado(id, estadoFinal);
 
         if (updatedEjemplar.isPresent()) {
             return ResponseEntity.ok(updatedEjemplar.get());

@@ -51,7 +51,7 @@
           <td>{{ prestamo.usuarioEmail }}</td>
           <td><strong>{{ prestamo.libroTitulo }}</strong></td>
           <td>{{ prestamo.fechaPrestamo }}</td>
-          <td>{{ prestamo.fechaDevolucion || '—' }}</td>
+          <td>{{ prestamo.fechaVencimiento || '—' }}</td>
           <td>
             <span [ngClass]="'estado-' + prestamo.estado.toLowerCase()" class="badge">
               {{ prestamo.estado }}

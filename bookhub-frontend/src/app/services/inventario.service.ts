@@ -24,7 +24,8 @@ export interface Categoria {
 export interface Ejemplar {
   id?: number;
   libroId: number;
-  disponible: boolean;
+  codigoInventario?: string;
+  estado: 'DISPONIBLE' | 'PRESTADO' | 'REPARACION';
 }
 
 @Injectable({
@@ -41,9 +42,46 @@ export class InventarioService {
    * Obtener todos los libros (con caché)
    */
   getLibros(): Observable<Libro[]> {
-    return this.baseApi.get<Libro[]>(`${this.API_URL}/libros`).pipe(
-      tap(() => console.log('[InventarioService] Libros cargados (con caché)'))
-    );
+    // Primero obtener libros, autores, categorías y ejemplares
+    return new Observable(observer => {
+      this.baseApi.get<any[]>(`${this.API_URL}/libros`).subscribe({
+        next: (librosRaw: any[]) => {
+          // Obtener autores y categorías para transformar
+          this.baseApi.get<Autor[]>(`${this.API_URL}/autores`).subscribe({
+            next: (autores: Autor[]) => {
+              this.baseApi.get<Categoria[]>(`${this.API_URL}/categorias`).subscribe({
+                next: (categorias: Categoria[]) => {
+                  this.baseApi.get<Ejemplar[]>(`${this.API_URL}/ejemplares`).subscribe({
+                    next: (ejemplares: Ejemplar[]) => {
+                      // Transformar libros
+                      const librosTransformados: Libro[] = librosRaw.map((libro: any) => {
+                        const autor = autores.find(a => a.id === libro.autorId);
+                        const categoria = categorias.find(c => c.id === libro.categoriaId);
+                        const ejemplaresDelLibro = ejemplares.filter(e => e.libroId === libro.id && e.estado === 'DISPONIBLE');
+
+                        return {
+                          id: libro.id,
+                          titulo: libro.titulo,
+                          autor: autor?.nombre || 'Desconocido',
+                          categoria: categoria?.nombre || 'Sin categoría',
+                          ejemplares: ejemplaresDelLibro.length
+                        };
+                      });
+                      observer.next(librosTransformados);
+                      observer.complete();
+                    },
+                    error: (err) => observer.error(err)
+                  });
+                },
+                error: (err) => observer.error(err)
+              });
+            },
+            error: (err) => observer.error(err)
+          });
+        },
+        error: (err) => observer.error(err)
+      });
+    });
   }
 
   /**

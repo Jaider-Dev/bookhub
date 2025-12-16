@@ -5,10 +5,14 @@ import { BaseApiService } from './base-api.service';
 
 export interface Prestamo {
   id?: number;
+  usuarioId?: number;
   usuarioEmail: string;
+  ejemplarId?: number;
   libroTitulo: string;
   fechaPrestamo: string;
-  fechaDevolucion?: string | null;
+  fechaVencimiento?: string;
+  fechaDevolucionReal?: string | null;
+  fechaDevolucion?: string | null; // Alias for fechaDevolucionReal for backward compatibility
   estado: 'ACTIVO' | 'DEVUELTO' | 'VENCIDO';
 }
 
@@ -32,7 +36,15 @@ export class PrestamosService {
    */
   getPrestamos(): Observable<Prestamo[]> {
     return this.baseApi.get<Prestamo[]>(this.API_URL).pipe(
-      tap(() => console.log('[PrestamosService] Préstamos cargados (con caché)'))
+      tap((prestamos) => {
+        // Normalizar fechaDevolucionReal a fechaDevolucion para compatibilidad
+        prestamos.forEach(p => {
+          if (p.fechaDevolucionReal && !p.fechaDevolucion) {
+            p.fechaDevolucion = p.fechaDevolucionReal;
+          }
+        });
+        console.log('[PrestamosService] Préstamos cargados (con caché)');
+      })
     );
   }
 

@@ -7,12 +7,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-    private final String GATEWAY_BASE_URL = "http://127.0.0.1:8080";
+    @org.springframework.beans.factory.annotation.Value("${gateway.url:http://127.0.0.1:8080}")
+    private String gatewayUrl;
 
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
-                .baseUrl(GATEWAY_BASE_URL)
+                .baseUrl(gatewayUrl)
                 .build();
     }
 }

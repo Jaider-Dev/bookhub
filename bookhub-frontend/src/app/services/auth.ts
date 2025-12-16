@@ -9,7 +9,7 @@ import { jwtDecode } from 'jwt-decode';
   providedIn: 'root'
 })
 export class Auth {
-  private readonly API_URL = 'http://localhost:8080/usuarios'; 
+  private readonly API_URL = 'http://localhost:8080/usuarios';
 
   constructor(private http: HttpClient, private router: Router) { }
 
@@ -22,7 +22,7 @@ export class Auth {
         }
       }),
       catchError(error => {
-        this.logout(); 
+        // No logout on login error, just throw
         throw error;
       })
     );
@@ -51,7 +51,7 @@ export class Auth {
     if (token) {
       try {
         const decodedToken: any = jwtDecode(token);
-        return decodedToken.rol || decodedToken.role || null; 
+        return decodedToken.rol || decodedToken.role || null;
       } catch (error) {
         console.error('Error decodificando el token:', error);
         return null;

@@ -77,21 +77,27 @@ export class PrestamosAdminComponent implements OnInit {
   }
 
   savePrestamo(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+    
     if (!this.formData.usuarioId || !this.formData.ejemplarId) {
       this.errorMessage = 'Usuario y ejemplar son requeridos';
+      setTimeout(() => this.errorMessage = '', 5000);
       return;
     }
 
     this.prestamosService.createPrestamo(this.formData).subscribe({
       next: () => {
-        this.successMessage = 'Préstamo registrado exitosamente';
+        this.successMessage = '✅ Préstamo registrado exitosamente';
         this.closeForm();
         this.loadPrestamos();
         setTimeout(() => this.successMessage = '', 3000);
       },
       error: (error) => {
         console.error('Error creando préstamo:', error);
-        this.errorMessage = error.error?.message || 'Error al crear préstamo';
+        const errorMsg = typeof error.error === 'string' ? error.error : (error.error?.message || 'Error al crear préstamo');
+        this.errorMessage = errorMsg;
+        setTimeout(() => this.errorMessage = '', 5000);
       }
     });
   }
@@ -109,6 +115,9 @@ export class PrestamosAdminComponent implements OnInit {
   confirmarDevolucion(): void {
     if (!this.prestamoEnDevolucion?.id) return;
 
+    this.errorMessage = '';
+    this.successMessage = '';
+
     this.prestamosService.devolverPrestamo(this.prestamoEnDevolucion.id).subscribe({
       next: () => {
         this.successMessage = '✅ Devolución registrada exitosamente';
@@ -118,7 +127,11 @@ export class PrestamosAdminComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error registrando devolución:', error);
-        this.errorMessage = error.error?.message || 'Error al registrar devolución';
+        const errorMsg = typeof error.error === 'string' ? error.error : (error.error?.message || 'Error al registrar devolución');
+        this.errorMessage = errorMsg;
+        setTimeout(() => {
+          this.errorMessage = '';
+        }, 5000);
       }
     });
   }

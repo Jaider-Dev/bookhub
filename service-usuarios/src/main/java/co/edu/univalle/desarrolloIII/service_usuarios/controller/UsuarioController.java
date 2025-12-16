@@ -24,9 +24,30 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<Usuario> create(@RequestBody Usuario usuario) {
-        Usuario savedUsuario = usuarioService.guardarUsuario(usuario);
-        return new ResponseEntity<>(savedUsuario, HttpStatus.CREATED);
+    public ResponseEntity<?> create(@RequestBody Usuario usuario) {
+        try {
+            // Establecer rol por defecto si no se especifica (para registro público)
+            if (usuario.getRol() == null || usuario.getRol().isEmpty()) {
+                usuario.setRol("LECTOR");
+            }
+            Usuario savedUsuario = usuarioService.guardarUsuario(usuario);
+            return new ResponseEntity<>(savedUsuario, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<?> createPublic(@RequestBody Usuario usuario) {
+        // Endpoint público para registro de usuarios
+        try {
+            usuario.setRol("LECTOR"); // Los usuarios que se registran son siempre LECTOR
+            usuario.setActivo(true);
+            Usuario savedUsuario = usuarioService.guardarUsuario(usuario);
+            return new ResponseEntity<>(savedUsuario, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
 
     @GetMapping
@@ -42,10 +63,14 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> update(@PathVariable Long id, @RequestBody Usuario usuarioDetails) {
-        return usuarioService.actualizarUsuario(id, usuarioDetails)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Usuario usuarioDetails) {
+        try {
+            return usuarioService.actualizarUsuario(id, usuarioDetails)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
     
     @PatchMapping("/{id}/Password")

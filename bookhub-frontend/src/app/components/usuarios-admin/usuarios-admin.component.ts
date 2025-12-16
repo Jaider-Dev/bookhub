@@ -126,6 +126,9 @@ export class UsuariosAdminComponent implements OnInit {
   }
 
   saveUsuario(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+    
     if (!this.formData.nombre || !this.formData.email) {
       this.errorMessage = 'Nombre y email son requeridos';
       return;
@@ -136,12 +139,14 @@ export class UsuariosAdminComponent implements OnInit {
         next: () => {
           this.successMessage = '✅ Usuario actualizado correctamente';
           this.closeForm();
-          setTimeout(() => this.clearMessages(), 3000);
           this.loadUsuarios();
+          setTimeout(() => this.clearMessages(), 3000);
         },
         error: (error) => {
           console.error('Error actualizando usuario:', error);
-          this.errorMessage = error.error?.message || 'Error al actualizar usuario';
+          const errorMsg = typeof error.error === 'string' ? error.error : (error.error?.message || 'Error al actualizar usuario');
+          this.errorMessage = errorMsg;
+          setTimeout(() => this.errorMessage = '', 5000);
         }
       });
     } else {
@@ -149,12 +154,14 @@ export class UsuariosAdminComponent implements OnInit {
         next: () => {
           this.successMessage = '✅ Usuario creado correctamente';
           this.closeForm();
-          setTimeout(() => this.clearMessages(), 3000);
           this.loadUsuarios();
+          setTimeout(() => this.clearMessages(), 3000);
         },
         error: (error) => {
           console.error('Error creando usuario:', error);
-          this.errorMessage = error.error?.message || 'Error al crear usuario';
+          const errorMsg = typeof error.error === 'string' ? error.error : (error.error?.message || 'Error al crear usuario');
+          this.errorMessage = errorMsg;
+          setTimeout(() => this.errorMessage = '', 5000);
         }
       });
     }

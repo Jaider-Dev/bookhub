@@ -1,0 +1,110 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: bookhub-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bookhub_usuarios
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - bookhub-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -proot || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  service-usuarios:
+    build: ./service-usuarios
+    container_name: service-usuarios
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bookhub_usuarios
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: "wget --spider -q http://localhost:8081/usuarios || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - bookhub-network
+
+  service-inventario:
+    build: ./service-inventario
+    container_name: service-inventario
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bookhub_inventario
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8082:8082"
+    networks:
+      - bookhub-network
+
+  service-prestamos:
+    build: ./service-prestamos
+    container_name: service-prestamos
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bookhub_prestamos
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      GATEWAY_URL: http://bookhub-gateway:8080
+    ports:
+      - "8083:8083"
+    networks:
+      - bookhub-network
+
+  bookhub-gateway:
+    build: ./bookhub-gateway
+    container_name: bookhub-gateway
+    depends_on:
+      service-usuarios:
+        condition: service_healthy
+      service-inventario:
+        condition: service_started
+      service-prestamos:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    networks:
+      - bookhub-network
+
+  bookhub-frontend:
+    build:
+      context: ./bookhub-frontend
+      dockerfile: Dockerfile
+    container_name: bookhub-frontend
+    restart: always
+    depends_on:
+      - bookhub-gateway
+    ports:
+      - "4200:80"
+    networks:
+      - bookhub-network
+
+networks:
+  bookhub-network:
+    driver: bridge
+
+volumes:
+  mysql_data:

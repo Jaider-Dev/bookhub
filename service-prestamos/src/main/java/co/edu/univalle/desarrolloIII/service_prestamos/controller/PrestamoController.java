@@ -1,13 +1,14 @@
 package co.edu.univalle.desarrolloIII.service_prestamos.controller;
 
+import co.edu.univalle.desarrolloIII.service_prestamos.dto.PrestamoResponseDto;
 import co.edu.univalle.desarrolloIII.service_prestamos.model.Prestamo;
 import co.edu.univalle.desarrolloIII.service_prestamos.service.PrestamoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import java.util.List;
 
 @RestController
 @RequestMapping("/prestamos")
@@ -17,8 +18,8 @@ public class PrestamoController {
     private PrestamoService prestamoService;
 
     @GetMapping
-    public List<Prestamo> getAllPrestamos() {
-        return prestamoService.findAll();
+    public Flux<PrestamoResponseDto> getAllPrestamos(@RequestHeader("Authorization") String authHeader) {
+        return prestamoService.findAllWithDetails(authHeader);
     }
 
     @PostMapping

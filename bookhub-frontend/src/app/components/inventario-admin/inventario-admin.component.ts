@@ -47,9 +47,9 @@ export class InventarioAdminComponent implements OnInit {
   ejemplaresFiltered: Ejemplar[] = [];
   searchEjemplares = '';
   sortByEjemplares: 'libroTitulo' | 'estado' = 'libroTitulo';
-  formEjemplar: Ejemplar = { libroId: 0, disponible: true };
+  formEjemplar: Ejemplar = { libroId: 0, estado: 'DISPONIBLE' };
 
-  constructor(private inventarioService: InventarioService) {}
+  constructor(private inventarioService: InventarioService) { }
 
   ngOnInit(): void {
     this.loadAllData();
@@ -148,6 +148,9 @@ export class InventarioAdminComponent implements OnInit {
   }
 
   saveLibro(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
     if (!this.formLibro.titulo || !this.formLibro.autor || !this.formLibro.categoria) {
       this.errorMessage = 'Título, autor y categoría son requeridos';
       return;
@@ -156,25 +159,31 @@ export class InventarioAdminComponent implements OnInit {
     if (this.editingId) {
       this.inventarioService.updateLibro(this.editingId, this.formLibro).subscribe({
         next: () => {
-          this.successMessage = 'Libro actualizado correctamente';
+          this.successMessage = '✅ Libro actualizado correctamente';
           this.closeForm();
           this.loadAllData();
+          setTimeout(() => this.clearMessages(), 3000);
         },
         error: (error) => {
           console.error('Error actualizando libro:', error);
-          this.errorMessage = error.error?.message || 'Error al actualizar libro';
+          const errorMsg = typeof error.error === 'string' ? error.error : (error.error?.message || 'Error al actualizar libro');
+          this.errorMessage = errorMsg;
+          setTimeout(() => this.errorMessage = '', 5000);
         }
       });
     } else {
       this.inventarioService.createLibro(this.formLibro).subscribe({
         next: () => {
-          this.successMessage = 'Libro creado correctamente';
+          this.successMessage = '✅ Libro creado correctamente';
           this.closeForm();
           this.loadAllData();
+          setTimeout(() => this.clearMessages(), 3000);
         },
         error: (error) => {
           console.error('Error creando libro:', error);
-          this.errorMessage = error.error?.message || 'Error al crear libro';
+          const errorMsg = typeof error.error === 'string' ? error.error : (error.error?.message || 'Error al crear libro');
+          this.errorMessage = errorMsg;
+          setTimeout(() => this.errorMessage = '', 5000);
         }
       });
     }
@@ -222,33 +231,41 @@ export class InventarioAdminComponent implements OnInit {
   }
 
   saveAutor(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
     if (!this.formAutor.nombre) {
       this.errorMessage = 'El nombre del autor es requerido';
+      setTimeout(() => this.errorMessage = '', 5000);
       return;
     }
 
     if (this.editingId) {
       this.inventarioService.updateAutor(this.editingId, this.formAutor).subscribe({
         next: () => {
-          this.successMessage = 'Autor actualizado correctamente';
+          this.successMessage = '✅ Autor actualizado correctamente';
           this.closeForm();
           this.loadAllData();
+          setTimeout(() => this.clearMessages(), 3000);
         },
         error: (error) => {
           console.error('Error actualizando autor:', error);
-          this.errorMessage = 'Error al actualizar autor';
+          this.errorMessage = error.error?.message || 'Error al actualizar autor';
+          setTimeout(() => this.errorMessage = '', 5000);
         }
       });
     } else {
       this.inventarioService.createAutor(this.formAutor).subscribe({
         next: () => {
-          this.successMessage = 'Autor creado correctamente';
+          this.successMessage = '✅ Autor creado correctamente';
           this.closeForm();
           this.loadAllData();
+          setTimeout(() => this.clearMessages(), 3000);
         },
         error: (error) => {
           console.error('Error creando autor:', error);
-          this.errorMessage = 'Error al crear autor';
+          this.errorMessage = error.error?.message || 'Error al crear autor';
+          setTimeout(() => this.errorMessage = '', 5000);
         }
       });
     }
@@ -296,33 +313,41 @@ export class InventarioAdminComponent implements OnInit {
   }
 
   saveCategoria(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
     if (!this.formCategoria.nombre) {
       this.errorMessage = 'El nombre de la categoría es requerido';
+      setTimeout(() => this.errorMessage = '', 5000);
       return;
     }
 
     if (this.editingId) {
       this.inventarioService.updateCategoria(this.editingId, this.formCategoria).subscribe({
         next: () => {
-          this.successMessage = 'Categoría actualizada correctamente';
+          this.successMessage = '✅ Categoría actualizada correctamente';
           this.closeForm();
           this.loadAllData();
+          setTimeout(() => this.clearMessages(), 3000);
         },
         error: (error) => {
           console.error('Error actualizando categoría:', error);
-          this.errorMessage = 'Error al actualizar categoría';
+          this.errorMessage = error.error?.message || 'Error al actualizar categoría';
+          setTimeout(() => this.errorMessage = '', 5000);
         }
       });
     } else {
       this.inventarioService.createCategoria(this.formCategoria).subscribe({
         next: () => {
-          this.successMessage = 'Categoría creada correctamente';
+          this.successMessage = '✅ Categoría creada correctamente';
           this.closeForm();
           this.loadAllData();
+          setTimeout(() => this.clearMessages(), 3000);
         },
         error: (error) => {
           console.error('Error creando categoría:', error);
-          this.errorMessage = 'Error al crear categoría';
+          this.errorMessage = error.error?.message || 'Error al crear categoría';
+          setTimeout(() => this.errorMessage = '', 5000);
         }
       });
     }
@@ -370,7 +395,7 @@ export class InventarioAdminComponent implements OnInit {
       this.formEjemplar = { ...ejemplar };
     } else {
       this.editingId = null;
-      this.formEjemplar = { libroId: 0, disponible: true };
+      this.formEjemplar = { libroId: 0, estado: 'DISPONIBLE' };
     }
     this.activeTab = 'ejemplares';
     this.showForm = true;

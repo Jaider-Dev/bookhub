@@ -52,6 +52,18 @@ export class UsuariosService {
   }
 
   /**
+   * Crear nuevo usuario público (registro)
+   */
+  createPublicUsuario(usuario: Usuario): Observable<Usuario> {
+    return this.baseApi.post<Usuario>(`${this.API_URL}/create`, usuario).pipe(
+      tap(() => {
+        console.log('[UsuariosService] Usuario público creado, invalidando caché');
+        this.baseApi.clearCacheForUrl(this.API_URL);
+      })
+    );
+  }
+
+  /**
    * Actualizar usuario existente
    */
   updateUsuario(id: number, usuario: Usuario): Observable<Usuario> {
